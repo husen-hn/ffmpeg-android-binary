@@ -9,7 +9,6 @@ FFMPEG_VERSION="7.1"
 # Use current directory
 WORK_DIR=$(pwd)
 echo "Working directory: $WORK_DIR"
-echo "Build started at: 2025-03-28 11:45:31 by husen-hn"
 echo "FFmpeg version: $FFMPEG_VERSION"
 
 # Clean old build if exists
@@ -27,11 +26,11 @@ if [ -f "ffmpeg-${FFMPEG_VERSION}.tar.bz2" ]; then
     }
 else
     echo "Error: ffmpeg-${FFMPEG_VERSION}.tar.bz2 not found!"
-    echo "Please download FFmpeg 7.1 from:"
-    echo "https://ffmpeg.org/releases/ffmpeg-7.1.tar.bz2"
+    echo "Please download FFmpeg ${FFMPEG_VERSION} from:"
+    echo "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2"
     echo ""
     echo "You can download it using:"
-    echo "wget https://ffmpeg.org/releases/ffmpeg-7.1.tar.bz2"
+    echo "wget https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2"
     exit 1
 fi
 
@@ -89,38 +88,42 @@ function build_ffmpeg
     ./configure \
         --prefix=$PREFIX \
         --enable-shared \
-        --disable-static \
-        --disable-doc \
-        --disable-programs \
-        --disable-everything \
-        --disable-vulkan \
-        --disable-ffmpeg \
-        --disable-ffplay \
-        --disable-ffprobe \
-        --disable-avdevice \
-        --disable-devices \
-        --disable-hwaccels \
-        --disable-dxva2 \
-        --disable-vaapi \
-        --disable-vdpau \
-        --enable-protocol=file \
-        --enable-decoder=h264,aac,mp3 \
-        --enable-encoder=libx264,aac \
-        --enable-parser=h264,aac \
-        --enable-demuxer=mov,mp4,matroska \
-        --enable-muxer=mp4,matroska \
-        --enable-gpl \
         --enable-pic \
+        --enable-jni \
+        --enable-mediacodec \
+        --enable-neon \
+        --enable-hwaccels \
+        --enable-gpl \
+        --enable-postproc \
+        --enable-small \
+        --enable-version3 \
+        --enable-nonfree \
+        --enable-protocols \
+        --enable-cross-compile \
+        --enable-encoders \
+        --enable-decoders \
+        --enable-demuxers \
+        --enable-muxers \
+        --enable-filters \
+        --enable-bsfs \
+        --enable-indevs \
+        --enable-outdevs \
+        --enable-network \
+        --enable-ffmpeg \
+        --enable-ffprobe \
+        --disable-ffplay \
+        --disable-static \
+        --disable-debug \
+        --disable-doc \
         --cross-prefix=$CROSS_PREFIX \
         --target-os=android \
         --arch=$ARCH \
         --cpu=$CPU \
         --cc=$CC \
         --cxx=$CXX \
-        --enable-cross-compile \
         --sysroot=$TOOLCHAIN/sysroot \
-        --extra-cflags="-Os -fpic" \
-        --extra-ldflags="" || {
+        --extra-cflags="-O3 -fPIC" \
+        --extra-ldflags="-L$PREFIX/lib" || {
             echo "Configure failed for $ABI"
             return 1
         }
@@ -149,21 +152,88 @@ do
     fi
 done
 
-# Copy .so files to the project
-PROJECT_LIBS="$WORK_DIR/android/project_libs"
-mkdir -p $PROJECT_LIBS
+# Copy binaries and libraries
+PROJECT_OUTPUT="$WORK_DIR/android/project_output"
+mkdir -p $PROJECT_OUTPUT
 
-# Copy only for specified architectures
+# Copy for each architecture
 for ABI in armeabi-v7a arm64-v8a x86_64
 do
-    ABI_LIBS="$PROJECT_LIBS/$ABI"
-    mkdir -p $ABI_LIBS
-    cp $WORK_DIR/android/$ABI/lib/*.so $ABI_LIBS/ || {
+    ABI_DIR="$PROJECT_OUTPUT/$ABI"
+    mkdir -p $ABI_DIR/{lib,bin}
+    
+    # Copy shared libraries
+    echo "Copying shared libraries for $ABI..."
+    cp $WORK_DIR/android/$ABI/lib/*.so $ABI_DIR/lib/ || {
         echo "Failed to copy .so files for $ABI"
         exit 1
     }
+    
+    # Copy ffmpeg binary
+    echo "Copying ffmpeg binary for $ABI..."
+    if [ -f "$WORK_DIR/android/$ABI/bin/ffmpeg" ]; then
+        cp $WORK_DIR/android/$ABI/bin/ffmpeg $ABI_DIR/bin/ && chmod +x $ABI_DIR/bin/ffmpeg
+    else
+        echo "Warning: ffmpeg binary not found for $ABI"
+    fi
+    
+    # Copy ffprobe binary
+    echo "Copying ffprobe binary for $ABI..."
+    if [ -f "$WORK_DIR/android/$ABI/bin/ffprobe" ]; then
+        cp $WORK_DIR/android/$ABI/bin/ffprobe $ABI_DIR/bin/ && chmod +x $ABI_DIR/bin/ffprobe
+    else
+        echo "Warning: ffprobe binary not found for $ABI"
+    fi
 done
 
-echo "Build completed! .so files are in $PROJECT_LIBS"
+echo "Build completed! Output is in $PROJECT_OUTPUT"
 echo "Built architectures: armeabi-v7a arm64-v8a x86_64"
 echo "FFmpeg version: $FFMPEG_VERSION"
+
+# Create version info file
+cat > "$PROJECT_OUTPUT/build_info.txt" << EOF
+FFmpeg Android Build Information
+Github: https://github.com/husen-hn/ffmpeg-android-binary
+==============================
+Version: $FFMPEG_VERSION
+
+Architectures:
+- armeabi-v7a
+- arm64-v8a
+- x86_64
+
+Features:
+- All encoders and decoders
+- All muxers and demuxers
+- All protocols
+- Hardware acceleration
+- Network support
+- FFmpeg and FFprobe included
+- MediaCodec support
+- NEON optimization
+
+Components:
+1. Shared Libraries (.so files):
+   - libavcodec
+   - libavdevice
+   - libavfilter
+   - libavformat
+   - libavutil
+   - libpostproc
+   - libswresample
+   - libswscale
+
+2. Executables:
+   - ffmpeg
+   - ffprobe
+EOF
+
+# Create directory structure info
+echo -e "\nDirectory Structure:" >> "$PROJECT_OUTPUT/build_info.txt"
+if command -v tree > /dev/null; then
+    tree $PROJECT_OUTPUT >> "$PROJECT_OUTPUT/build_info.txt"
+else
+    find $PROJECT_OUTPUT -type f >> "$PROJECT_OUTPUT/build_info.txt"
+fi
+
+echo "Build information has been saved to $PROJECT_OUTPUT/build_info.txt"
