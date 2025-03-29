@@ -1,17 +1,32 @@
 # Android FFmpeg Builder
-A robust shell script to build FFmpeg libraries for Android. This script automatically builds FFmpeg shared libraries (.so files) for multiple Android architectures.
 
-## Current Features
-- Builds FFmpeg version 7.1 for Android
-- Supports multiple architectures (armeabi-v7a, arm64-v8a, x86_64)
-- Minimal configuration focusing on core video/audio functionality
-- Optimized for size and performance
-- Automated build process
-- Pre-built binaries available in releases
+🎬 Automated FFmpeg shared library and binary builder for Android. This script builds FFmpeg with full codec support and hardware acceleration for multiple Android architectures.
 
-## Prerequisites
+[![License](https://img.shields.io/badge/License-LGPL-blue.svg)](LICENSE)
+[![FFmpeg Version](https://img.shields.io/badge/FFmpeg-7.1-red.svg)](https://ffmpeg.org/releases/ffmpeg-7.1.tar.bz2)
+[![GitHub last commit](https://img.shields.io/github/last-commit/husen-hn/ffmpeg-android-binary?label=Last%20Update)](https://github.com/husen-hn/ffmpeg-android-binary/commits/main)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/husen-hn/ffmpeg-android-binary)](https://github.com/husen-hn/ffmpeg-android-binary/releases/latest)
+
+## 🚀 Features
+
+- FFmpeg 7.1 with full codec and format support
+- Supported architectures:
+  - arm64-v8a
+  - armeabi-v7a
+  - x86_64
+- Hardware acceleration enabled
+- MediaCodec support
+- NEON optimization
+- Network capabilities
+- All encoders and decoders
+- All muxers and demuxers
+- All protocols enabled
+- ffmpeg and ffprobe binaries included
+
+## 📋 Prerequisites
 
 ### Required Tools
+
 - Android NDK
 - Build essentials (gcc, make)
 - YASM/NASM assembler
@@ -19,61 +34,128 @@ A robust shell script to build FFmpeg libraries for Android. This script automat
 - pkg-config
 
 On Ubuntu/Debian:
+
 ```bash
-sudo apt-get update
-sudo apt-get install build-essential gcc make yasm nasm pkg-config wget
+sudo apt-get update && sudo apt-get install -y \
+    build-essential \
+    gcc \
+    make \
+    yasm \
+    nasm \
+    pkg-config \
+    wget
 ```
 
 On macOS:
+
 ```bash
 brew install automake yasm nasm pkg-config wget
 ```
 
-Android NDK Setup
+### Android NDK Setup
+
 1. Download Android NDK from [Android's NDK page](https://developer.android.com/ndk/downloads)
 2. Extract it to a location (default: `/opt/android-ndk`)
 3. Update the `ANDROID_NDK_HOME` variable in the script if your NDK is installed elsewhere
+4. Ensure NDK toolchain is accessible
 
-## Usage
-1. Clone this repository:
+## 🛠️ Usage
+
+1. Clone the repository:
+
 ```bash
 git clone https://github.com/husen-hn/android-ffmpeg-builder.git
 cd android-ffmpeg-builder
 ```
 
 2. Make the script executable:
+
 ```bash
 chmod +x build_ffmpeg.sh
 ```
 
 3. Run the script:
+
 ```bash
 ./build_ffmpeg.sh
 ```
 
-The built libraries will be in `android/project_libs/`:
+## 📚 Output Structure
+
 ```
-android/project_libs/
+android/project_output/
 ├── arm64-v8a/
-│   ├── libavcodec.so
-│   ├── libavformat.so
-│   ├── libavutil.so
-│   ├── libswresample.so
-│   └── libswscale.so
+│   ├── bin/
+│   │   ├── ffmpeg
+│   │   └── ffprobe
+│   └── lib/
+│       ├── libavcodec.so
+│       ├── libavdevice.so
+│       ├── libavfilter.so
+│       ├── libavformat.so
+│       ├── libavutil.so
+│       ├── libpostproc.so
+│       ├── libswresample.so
+│       └── libswscale.so
 ├── armeabi-v7a/
-└── x86_64/
+├── x86_64/
+└── build_info.txt
 ```
 
-## Configurations
-The script builds FFmpeg with these configurations:
-- Shared libraries enabled
-- Static libraries disabled
-- Documentation disabled
-- Programs (ffmpeg, ffplay, ffprobe) disabled
-- Hardware acceleration disabled
-- Minimal codec support (h264, aac, mp3)
-- File protocol support
-- MP4 and MKV container support
+## 🔧 Configurations
 
-## License
+The script builds FFmpeg with these features:
+
+- Shared libraries enabled
+- Hardware acceleration
+- MediaCodec support
+- NEON optimization
+- Network support
+- All codecs and formats
+- Debug symbols stripped
+- Size-optimized binaries
+
+## 📦 Releases & Pre-built Binaries
+
+### Latest Release
+
+[![Latest Release](https://img.shields.io/github/v/release/husen-hn/ffmpeg-android-binary)](https://github.com/husen-hn/ffmpeg-android-binary/releases/latest)
+
+Pre-built binaries are available in the [Releases](https://github.com/husen-hn/ffmpeg-android-binary/releases) section. Each release includes:
+
+- Built `.so` files for all supported architectures (arm64-v8a, armeabi-v7a, x86_64)
+- ffmpeg and ffprobe binaries
+- Build information and checksums
+- Source code archive
+
+## 🔄 Updating FFmpeg Version
+
+1. Update the version in `build_ffmpeg.sh`:
+
+```bash
+# Change this line
+FFMPEG_VERSION="7.1"
+```
+
+2. Download the new FFmpeg source:
+
+```bash
+wget https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2
+```
+
+3. Clean old build files:
+
+```bash
+rm -rf ffmpeg-*
+rm -rf android/project_output/*
+```
+
+4. Run the build script:
+
+```bah
+./build_ffmpeg.sh
+```
+
+## 📜 License
+
 This project is licensed under the GNU Lesser General Public Version 3 License - see the [LICENSE](./LICENSE) file for details.
